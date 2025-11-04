@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 ID填充图片生成器
 从Excel文件读取用户ID，并将其填充到背景图片的指定方框中
