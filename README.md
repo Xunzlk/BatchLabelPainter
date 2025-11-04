@@ -231,7 +231,7 @@ python test_alignment.py
 ## 示例
 
 假设你的Excel文件包含以下用户ID：
-- Amorta
+- Xlmy
 - Luks
 - aliks devil
 - no one
@@ -239,7 +239,7 @@ python test_alignment.py
 - ももちゃん
 
 程序会生成对应的图片文件：
-- 001_Amorta.png
+- 001_Xlmy.png
 - 002_Luks.png
 - 003_aliks_devil.png
 - 004_no___one.png
