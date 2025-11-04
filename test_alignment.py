@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+测试字体对齐和边界检测效果的脚本
+"""
+
+import os
+import json
+from PIL import Image, ImageDraw, ImageFont
+import logging
+
+# 设置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def create_test_image():
+    """
+    创建一个测试图片，显示方框边界和文字对齐效果
+    """
+    # 加载配置
+    with open('config.json', 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    
+    # 打开背景图片
+    background = Image.open(config['background_image']).convert('RGBA')
+    draw = ImageDraw.Draw(background)
+    
+    # 获取配置参数
+    text_box = config['text_box']
+    font_settings = config['font_settings']
+    
+    # 绘制方框边界（红色虚线）
+    box_x = text_box['x']
+    box_y = text_box['y']
+    box_width = text_box['width']
+    box_height = text_box['height']
+    
+    # 绘制方框轮廓
+    draw.rectangle(
+        [box_x, box_y, box_x + box_width, box_y + box_height],
+        outline=(255, 0, 0, 128),  # 红色半透明
+        width=3
+    )
+    
+    # 绘制中心线（帮助检查垂直居中）
+    center_y = box_y + box_height // 2
+    draw.line(
+        [box_x, center_y, box_x + box_width, center_y],
+        fill=(0, 255, 0, 128),  # 绿色半透明
+        width=2
+    )
+    
+    # 绘制垂直中心线（帮助检查水平居中）
+    center_x = box_x + box_width // 2
+    draw.line(
+        [center_x, box_y, center_x, box_y + box_height],
+        fill=(0, 255, 0, 128),  # 绿色半透明
+        width=2
+    )
+    
+    # 测试不同长度的文字
+    test_texts = ["short", "medium length", "very long text and more"]
+    
+    for i, test_text in enumerate(test_texts):
+        # 为每个测试文字创建单独的图片
+        test_img = background.copy()
+        test_draw = ImageDraw.Draw(test_img)
+        
+        # 计算字体大小
+        font_size = calculate_font_size(
+            test_text,
+            config['font_path'],
+            box_width - 2 * config['padding'],
+            box_height - 2 * config['padding'],
+            font_settings['max_font_size'],
+            font_settings['min_font_size']
+        )
+        
+        # 创建字体
+        font = ImageFont.truetype(config['font_path'], font_size)
+        
+        # 计算文字位置
+        temp_img = Image.new('RGB', (box_width, box_height), 'white')
+        temp_draw = ImageDraw.Draw(temp_img)
+        bbox = temp_draw.textbbox((0, 0), test_text, font=font)
+        text_width = bbox[2] - bbox[0]
+        
+        # 获取字体度量信息
+        ascent, descent = font.getmetrics()
+        total_font_height = ascent + descent
+        
+        # 居中对齐
+        text_x = box_x + (box_width - text_width) // 2
+        # 垂直居中：考虑字体的完整高度（ascent + descent）
+        text_y = box_y + (box_height - total_font_height) // 2
+        
+        # 绘制文字
+        test_draw.text(
+            (text_x, text_y),
+            test_text,
+            font=font,
+            fill=tuple(font_settings['color'])
+        )
+        
+        # 保存测试图片
+        output_path = f"output/test_alignment_{i+1}_{test_text[:5]}.png"
+        test_img.save(output_path, 'PNG')
+        logger.info(f"生成测试图片: {output_path}")
+        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y})")
+
+def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size):
+    """
+    计算合适的字体大小（与主程序相同的逻辑）
+    """
+    font_size = max_font_size
+    
+    while font_size >= min_font_size:
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+            
+            # 使用更准确的方法计算文字尺寸
+            temp_img = Image.new('RGB', (max_width * 2, max_height * 2), 'white')
+            temp_draw = ImageDraw.Draw(temp_img)
+            
+            # 获取文字边界框
+            bbox = temp_draw.textbbox((0, 0), text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
+            
+            # 获取字体度量信息
+            ascent, descent = font.getmetrics()
+            actual_height = ascent + descent
+            
+            # 添加安全边距
+            safe_width = text_width * 1.03
+            safe_height = max(text_height, actual_height) * 1.03
+            
+            # 检查是否适合方框
+            if safe_width <= max_width and safe_height <= max_height:
+                return font_size
+                
+            font_size -= 1
+        except Exception as e:
+            logger.warning(f"字体大小计算出错: {e}")
+            font_size -= 2
+    
+    return min_font_size
+
+if __name__ == "__main__":
+    logger.info("开始生成测试图片...")
+    create_test_image()
+    logger.info("测试图片生成完成！")

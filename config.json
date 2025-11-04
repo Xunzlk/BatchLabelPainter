@@ -1,0 +1,23 @@
+{
+    "background_image": "img/background.png",
+    "font_path": "font/BitTrip7(sRB).TTF",
+    "excel_file": "data/UserIds.xlsx",
+    "output_dir": "output",
+    "text_box": {
+        "x": 636,
+        "y": 859,
+        "width": 1052,
+        "height": 170
+    },
+    "font_settings": {
+        "color": [
+            197,
+            253,
+            82
+        ],
+        "max_font_size": 400,
+        "min_font_size": 12
+    },
+    "text_alignment": "center",
+    "padding": 0
+}
