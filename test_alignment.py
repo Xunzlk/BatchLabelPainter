@@ -28,7 +28,35 @@ def create_test_image():
     
     # 获取配置参数
     text_box = config['text_box']
-    font_settings = config['font_settings']
+    font_settings_global = config['font_settings']
+
+    def is_ascii_text(s):
+        """
+        判断文本是否为 ASCII（与主程序保持一致的逻辑）。
+        优先使用 str.isascii()，否则回退逐字符码点检查。
+        """
+        try:
+            return str(s).isascii()
+        except Exception:
+            return all(ord(ch) < 128 for ch in str(s))
+
+    def get_selected_font_settings(is_ascii):
+        """
+        根据是否 ASCII 返回合并后的字体设置（全局 + 针对英文/非英文的覆盖）。
+        - 当 bold=True 且 stroke_width 缺省或为 0 时，默认 stroke_width=1。
+        - 未设置 stroke_color 时，默认与 color 相同。
+        """
+        selected = dict(font_settings_global)
+        overrides = config.get('font_settings_latin') if is_ascii else config.get('font_settings_non_latin')
+        if overrides:
+            selected.update(overrides)
+        sw = int(selected.get('stroke_width', 0) or 0)
+        if selected.get('bold', False) and sw == 0:
+            sw = 1
+        selected['stroke_width'] = sw
+        if 'stroke_color' not in selected or selected.get('stroke_color') is None:
+            selected['stroke_color'] = selected.get('color')
+        return selected
     
     # 绘制方框边界（红色虚线）
     box_x = text_box['x']
@@ -69,14 +97,13 @@ def create_test_image():
         
         # 计算字体大小
         # 读取加粗/描边配置（与主程序保持一致）
-        stroke_width = font_settings.get('stroke_width', 0)
-        if font_settings.get('bold', False) and stroke_width == 0:
-            stroke_width = 1
+        is_ascii = is_ascii_text(test_text)
+        selected_settings = get_selected_font_settings(is_ascii)
+        stroke_width = selected_settings.get('stroke_width', 0)
 
         # 根据文本内容选择字体路径（英文/非英文）
         selected_font_path = None
         try:
-            is_ascii = test_text.isascii() if hasattr(str, 'isascii') else all(ord(ch) < 128 for ch in test_text)
             selected_font_path = config.get('font_path_latin') if is_ascii else config.get('font_path_non_latin', config['font_path'])
         except Exception:
             selected_font_path = config['font_path']
@@ -86,8 +113,8 @@ def create_test_image():
             selected_font_path,
             box_width - 2 * config['padding'],
             box_height - 2 * config['padding'],
-            font_settings['max_font_size'],
-            font_settings['min_font_size'],
+            selected_settings['max_font_size'],
+            selected_settings['min_font_size'],
             stroke_width=stroke_width
         )
         
@@ -112,13 +139,13 @@ def create_test_image():
         
         # 绘制文字
         # 读取描边颜色（未配置则使用文字颜色）
-        stroke_color = font_settings.get('stroke_color', font_settings['color'])
+        stroke_color = selected_settings.get('stroke_color', selected_settings['color'])
 
         test_draw.text(
             (text_x, text_y),
             test_text,
             font=font,
-            fill=tuple(font_settings['color']),
+            fill=tuple(selected_settings['color']),
             stroke_width=stroke_width,
             stroke_fill=tuple(stroke_color),
             anchor=anchor
@@ -128,7 +155,7 @@ def create_test_image():
         output_path = f"output/test_alignment_{i+1}_{test_text[:5]}.png"
         test_img.save(output_path, 'PNG')
         logger.info(f"生成测试图片: {output_path}")
-        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}, 字体: {selected_font_path}")
+        logger.info(f"文字: '{test_text}', ASCII: {is_ascii}, 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}, 字体: {selected_font_path}, stroke_width: {stroke_width}")
 
 def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size, stroke_width=0):
     """

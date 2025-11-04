@@ -145,6 +145,36 @@ python test_alignment.py
 - 若未设置这两项，会回退使用 `font_path`
 - 混合文本（既有英文又有非 ASCII）会使用 `font_path_non_latin`，以保证所有字符都能渲染；如需“每个字符按语言分别选择字体”的高级排版，我可以为你实现按字符切分并逐段布局的版本。
 
+### 每种字体独立加粗与描边设置
+- 在 `config.json` 中可为英文与非英文分别配置加粗与描边效果：
+  - `font_settings_latin`: 针对英文（ASCII）文本的字体设置（可包含 `bold`、`stroke_width`、`stroke_color`、`max_font_size`、`min_font_size`、`color` 等任意需要覆盖的项）
+  - `font_settings_non_latin`: 针对非英文（包含非 ASCII 字符）文本的字体设置（字段同上）
+- 合并规则：
+  - 以全局 `font_settings` 为基础；按文本类型选择对应的 `font_settings_latin` 或 `font_settings_non_latin` 覆盖基础设置
+  - 当 `bold` 为 `true` 且未显式设置 `stroke_width` 或其为 0 时，程序默认 `stroke_width = 1`
+  - 若未设置 `stroke_color`，则默认与 `color` 相同
+- 示例（仅示意）：
+```json
+{
+  "font_settings": {
+    "color": [197, 253, 82],
+    "max_font_size": 400,
+    "min_font_size": 12,
+    "bold": true,
+    "stroke_width": 2
+  },
+  "font_settings_latin": {
+    "bold": true,
+    "stroke_width": 1
+  },
+  "font_settings_non_latin": {
+    "bold": true,
+    "stroke_width": 2,
+    "stroke_color": [197, 253, 82]
+  }
+}
+```
+
 ### 对齐方式
 - `center`: 居中对齐
 - `left`: 左对齐

@@ -125,6 +125,61 @@ class IDFillGenerator:
         logger.warning(f"使用最小字体大小 {min_font_size} 对于文字: {text}")
         return min_font_size
 
+    def is_ascii_text(self, text):
+        """
+        判断文本是否全部为 ASCII 字符。
+
+        说明：
+        - 优先使用 Python 3.7+ 的 str.isascii() 方法。
+        - 若不可用或异常，则回退到逐字符检查码点 < 128。
+
+        Args:
+            text (str): 需要判断的文本
+
+        Returns:
+            bool: True 表示全部为 ASCII；False 表示包含非 ASCII 字符
+        """
+        try:
+            return str(text).isascii()
+        except Exception:
+            return all(ord(ch) < 128 for ch in str(text))
+
+    def get_font_settings_for_text(self, text):
+        """
+        根据文本类型（英文/非英文）返回合并后的字体设置。
+
+        合并规则：
+        - 以全局 font_settings 作为基础。
+        - 英文文本（ASCII）时，使用 font_settings_latin 覆盖基础设置。
+        - 非英文文本（包含非 ASCII）时，使用 font_settings_non_latin 覆盖基础设置。
+        - 若覆盖项未配置，则使用基础设置。
+        - 当 bold=True 且未显式设置 stroke_width 或为 0 时，默认将 stroke_width 设为 1。
+        - 若未显式设置 stroke_color，则默认与 color 相同。
+
+        Args:
+            text (str): 需要绘制的文本
+
+        Returns:
+            dict: 合并后的字体设置字典（包含 color/max_font_size/min_font_size/bold/stroke_width/stroke_color）
+        """
+        base = dict(self.config.get('font_settings', {}))
+        is_ascii = self.is_ascii_text(text)
+        overrides = self.config.get('font_settings_latin') if is_ascii else self.config.get('font_settings_non_latin')
+        if overrides:
+            base.update(overrides)
+
+        # 处理加粗默认描边
+        sw = int(base.get('stroke_width', 0) or 0)
+        if base.get('bold', False) and sw == 0:
+            sw = 1
+        base['stroke_width'] = sw
+
+        # 默认描边颜色与文字颜色一致
+        if 'stroke_color' not in base or base.get('stroke_color') is None:
+            base['stroke_color'] = base.get('color')
+
+        return base
+
     def choose_font_path(self, text):
         """
         根据文本内容选择字体路径。
@@ -145,13 +200,7 @@ class IDFillGenerator:
             font_path_latin = self.config.get('font_path_latin')
             font_path_non_latin = self.config.get('font_path_non_latin')
 
-            # Python 3.7+ 提供 str.isascii() 判断是否仅包含 ASCII
-            is_ascii = False
-            try:
-                is_ascii = str(text).isascii()
-            except Exception:
-                # 兼容性回退：检查每个字符码点是否 < 128
-                is_ascii = all(ord(ch) < 128 for ch in str(text))
+            is_ascii = self.is_ascii_text(text)
 
             if is_ascii and font_path_latin:
                 return font_path_latin
@@ -181,17 +230,16 @@ class IDFillGenerator:
             
             # 获取配置参数
             text_box = self.config['text_box']
-            font_settings = self.config['font_settings']
+            # 根据文本类型（英文/非英文）合并并获取字体设置
+            font_settings = self.get_font_settings_for_text(str(user_id))
             padding = self.config['padding']
             
             # 计算实际可用空间（减去内边距）
             available_width = text_box['width'] - 2 * padding
             available_height = text_box['height'] - 2 * padding
 
-            # 读取加粗/描边配置
+            # 读取加粗/描边配置（已在 font_settings 中处理默认值）
             stroke_width = font_settings.get('stroke_width', 0)
-            if font_settings.get('bold', False) and stroke_width == 0:
-                stroke_width = 1  # 启用加粗时，默认使用 1px 描边
 
             # 根据文本内容选择字体路径（英文/非英文）
             selected_font_path = self.choose_font_path(str(user_id))
@@ -245,7 +293,7 @@ class IDFillGenerator:
                 anchor = 'rm'
             
             # 绘制文字
-            # 读取描边颜色（若未配置则与文字颜色一致）
+            # 读取描边颜色（若未配置则与文字颜色一致，已在 font_settings 默认处理）
             stroke_color = font_settings.get('stroke_color', font_settings['color'])
 
             draw.text(
