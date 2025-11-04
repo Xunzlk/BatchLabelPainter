@@ -65,13 +65,19 @@ def create_test_image():
         test_draw = ImageDraw.Draw(test_img)
         
         # 计算字体大小
+        # 读取加粗/描边配置（与主程序保持一致）
+        stroke_width = font_settings.get('stroke_width', 0)
+        if font_settings.get('bold', False) and stroke_width == 0:
+            stroke_width = 1
+
         font_size = calculate_font_size(
             test_text,
             config['font_path'],
             box_width - 2 * config['padding'],
             box_height - 2 * config['padding'],
             font_settings['max_font_size'],
-            font_settings['min_font_size']
+            font_settings['min_font_size'],
+            stroke_width=stroke_width
         )
         
         # 创建字体
@@ -80,35 +86,42 @@ def create_test_image():
         # 计算文字位置
         temp_img = Image.new('RGB', (box_width, box_height), 'white')
         temp_draw = ImageDraw.Draw(temp_img)
-        bbox = temp_draw.textbbox((0, 0), test_text, font=font)
+        bbox = temp_draw.textbbox((0, 0), test_text, font=font, stroke_width=stroke_width)
         text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         
         # 获取字体度量信息
         ascent, descent = font.getmetrics()
         total_font_height = ascent + descent
         
-        # 居中对齐
-        text_x = box_x + (box_width - text_width) // 2
-        # 垂直居中：考虑字体的完整高度（ascent + descent）
-        text_y = box_y + (box_height - total_font_height) // 2
+        # 使用 Pillow 的 anchor 实现更稳定的居中（包含描边影响）
+        text_x = box_x + box_width // 2
+        text_y = box_y + box_height // 2
+        anchor = 'mm'
         
         # 绘制文字
+        # 读取描边颜色（未配置则使用文字颜色）
+        stroke_color = font_settings.get('stroke_color', font_settings['color'])
+
         test_draw.text(
             (text_x, text_y),
             test_text,
             font=font,
-            fill=tuple(font_settings['color'])
+            fill=tuple(font_settings['color']),
+            stroke_width=stroke_width,
+            stroke_fill=tuple(stroke_color),
+            anchor=anchor
         )
         
         # 保存测试图片
         output_path = f"output/test_alignment_{i+1}_{test_text[:5]}.png"
         test_img.save(output_path, 'PNG')
         logger.info(f"生成测试图片: {output_path}")
-        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y})")
+        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}")
 
-def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size):
+def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size, stroke_width=0):
     """
-    计算合适的字体大小（与主程序相同的逻辑）
+    计算合适的字体大小（与主程序相同的逻辑），支持描边宽度以模拟加粗效果
     """
     font_size = max_font_size
     
@@ -121,7 +134,7 @@ def calculate_font_size(text, font_path, max_width, max_height, max_font_size, m
             temp_draw = ImageDraw.Draw(temp_img)
             
             # 获取文字边界框
-            bbox = temp_draw.textbbox((0, 0), text, font=font)
+            bbox = temp_draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             

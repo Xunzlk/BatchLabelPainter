@@ -70,7 +70,7 @@ class IDFillGenerator:
             logger.error(f"读取Excel文件失败: {e}")
             raise
     
-    def calculate_font_size(self, text, font_path, max_width, max_height, max_font_size, min_font_size):
+    def calculate_font_size(self, text, font_path, max_width, max_height, max_font_size, min_font_size, stroke_width=0):
         """
         计算合适的字体大小，确保文字完整显示且不超出方框
         
@@ -81,7 +81,8 @@ class IDFillGenerator:
             max_height (int): 方框最大高度
             max_font_size (int): 最大字体大小
             min_font_size (int): 最小字体大小
-            
+            stroke_width (int): 文字描边宽度，用于模拟加粗效果（同时会影响文字的实际宽高）
+        
         Returns:
             int: 合适的字体大小
         """
@@ -97,7 +98,8 @@ class IDFillGenerator:
                 temp_draw = ImageDraw.Draw(temp_img)
                 
                 # 获取文字边界框
-                bbox = temp_draw.textbbox((0, 0), text, font=font)
+                # 在测量时考虑描边宽度，确保加粗后仍可正确计算
+                bbox = temp_draw.textbbox((0, 0), text, font=font, stroke_width=stroke_width)
                 text_width = bbox[2] - bbox[0]
                 text_height = bbox[3] - bbox[1]
                 
@@ -107,6 +109,7 @@ class IDFillGenerator:
                 
                 # 添加一些安全边距（3%）
                 safe_width = text_width * 1.03
+                # 当存在描边时，text_height 已包含描边，直接使用更可靠
                 safe_height = max(text_height, actual_height) * 1.03
                 
                 # 检查是否适合方框
@@ -145,7 +148,12 @@ class IDFillGenerator:
             # 计算实际可用空间（减去内边距）
             available_width = text_box['width'] - 2 * padding
             available_height = text_box['height'] - 2 * padding
-            
+
+            # 读取加粗/描边配置
+            stroke_width = font_settings.get('stroke_width', 0)
+            if font_settings.get('bold', False) and stroke_width == 0:
+                stroke_width = 1  # 启用加粗时，默认使用 1px 描边
+
             # 计算合适的字体大小
             font_size = self.calculate_font_size(
                 str(user_id),
@@ -153,7 +161,8 @@ class IDFillGenerator:
                 available_width,
                 available_height,
                 font_settings['max_font_size'],
-                font_settings['min_font_size']
+                font_settings['min_font_size'],
+                stroke_width=stroke_width
             )
             
             # 创建字体对象
@@ -165,32 +174,46 @@ class IDFillGenerator:
             temp_draw = ImageDraw.Draw(temp_img)
             
             # 获取文字边界框（相对于(0,0)位置）
-            bbox = temp_draw.textbbox((0, 0), str(user_id), font=font)
+            bbox = temp_draw.textbbox((0, 0), str(user_id), font=font, stroke_width=stroke_width)
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
             
             # 获取字体的度量信息
             ascent, descent = font.getmetrics()
             total_font_height = ascent + descent
-            
-            # 计算文字位置（居中对齐）
+
+            # 计算文字位置（使用 Pillow anchor 实现更稳定的居中/对齐）
+            # 说明：
+            # - 当存在描边(stroke)时，文字的视觉边界会随 stroke 增加，
+            #   使用 anchor='mm'/'lm'/'rm' 以边界框为参考点进行定位，可确保居中稳定。
             if self.config['text_alignment'] == 'center':
-                text_x = text_box['x'] + (text_box['width'] - text_width) // 2
-                # 垂直居中：考虑字体的完整高度（ascent + descent）
-                text_y = text_box['y'] + (text_box['height'] - total_font_height) // 2
+                # 中心点坐标（方框中心）
+                text_x = text_box['x'] + text_box['width'] // 2
+                text_y = text_box['y'] + text_box['height'] // 2
+                anchor = 'mm'
             elif self.config['text_alignment'] == 'left':
+                # 左对齐并垂直居中（使用中线作为 anchor 的垂直参考）
                 text_x = text_box['x'] + padding
-                text_y = text_box['y'] + (text_box['height'] - total_font_height) // 2
+                text_y = text_box['y'] + text_box['height'] // 2
+                anchor = 'lm'
             else:  # right
-                text_x = text_box['x'] + text_box['width'] - text_width - padding
-                text_y = text_box['y'] + (text_box['height'] - total_font_height) // 2
+                # 右对齐并垂直居中
+                text_x = text_box['x'] + text_box['width'] - padding
+                text_y = text_box['y'] + text_box['height'] // 2
+                anchor = 'rm'
             
             # 绘制文字
+            # 读取描边颜色（若未配置则与文字颜色一致）
+            stroke_color = font_settings.get('stroke_color', font_settings['color'])
+
             draw.text(
                 (text_x, text_y),
                 str(user_id),
                 font=font,
-                fill=tuple(font_settings['color'])
+                fill=tuple(font_settings['color']),
+                stroke_width=stroke_width,
+                stroke_fill=tuple(stroke_color),
+                anchor=anchor
             )
             
             # 保存图片
@@ -240,13 +263,13 @@ def main():
         # 生成所有图片
         generator.generate_all_images()
         
-        print("\\n=== 图片生成完成 ===")
+        print("=== 图片生成完成 ===")
         print(f"输出目录: {generator.output_dir}")
         print("请检查生成的图片，如需调整方框位置或字体设置，请修改 config.json 文件")
         
     except Exception as e:
         logger.error(f"程序执行失败: {e}")
-        print(f"\\n错误: {e}")
+        print(f"错误: {e}")
         print("请检查配置文件和输入文件是否正确")
 
 

@@ -68,7 +68,10 @@ python find_text_box.py
     "font_settings": {                          // 字体设置
         "color": [0, 0, 0],                     // 字体颜色 [R, G, B]
         "max_font_size": 48,                    // 最大字体大小
-        "min_font_size": 12                     // 最小字体大小
+        "min_font_size": 12,                    // 最小字体大小
+        "bold": false,                          // 是否加粗（true/false）。开启后默认使用 1px 描边模拟加粗
+        "stroke_width": 0,                      // 描边宽度（像素）。当与 color 相同可模拟加粗；推荐 0~2
+        "stroke_color": [0, 0, 0]               // 描边颜色 [R, G, B]，未配置时默认与 color 相同
     },
     "text_alignment": "center",                 // 文字对齐方式: center/left/right
     "padding": 10                               // 方框内边距
@@ -128,6 +131,9 @@ python test_alignment.py
 - `color`: RGB颜色值，例如 [0, 0, 0] 表示黑色，[255, 0, 0] 表示红色
 - `max_font_size`: 最大字体大小，程序会从这个大小开始尝试
 - `min_font_size`: 最小字体大小，如果文字太长会缩小到这个大小
+- `bold`: 是否加粗（布尔值）。开启后会自动将 `stroke_width` 设为 1（若你未显式配置），并在绘制时使用与 `color` 相同的描边颜色来模拟加粗
+- `stroke_width`: 描边宽度（像素）。当与 `color` 相同可模拟加粗；注意描边会增加文字的实际宽高，程序已在尺寸计算中考虑该影响
+- `stroke_color`: 描边颜色（RGB）。如果未设置此项，程序会使用与 `color` 相同的颜色作为描边颜色；如需“彩色描边 + 不同填充色”效果，配置此项即可。
 
 ### 对齐方式
 - `center`: 居中对齐
@@ -162,6 +168,7 @@ python test_alignment.py
    - 调整方框大小（增加width或height）
    - 调整最小字体大小（减小min_font_size）
    - 减少内边距（padding）
+   - 若启用了加粗（bold/stroke_width>0），可以适当减小 `stroke_width` 或字体大小
 
 ### 日志信息
 
