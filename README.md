@@ -221,9 +221,6 @@ python test_alignment.py
 3. Excel文件应该使用UTF-8编码以正确显示中文
 4. 生成的图片会保存为PNG格式
 5. 如果用户ID包含特殊字符，文件名会自动转换为安全字符
-6. 如果使用打包的 exe，请整体拷贝 `dist` 文件夹（包含 `config.json`、`img`、`font`、`data` 等资源）到目标机器，在该文件夹内运行 `RunAll.exe` 或 `BatchIdFill.exe`。
-7. BatchIdFill.exe 为控制台版，运行结束会提示“按任意键退出”；如需自动化或脚本运行，可设置环境变量 `NO_PAUSE_ON_END=1` 以跳过等待。
-8. 分发便捷方式：使用项目根目录的 `BatchIdFill_dist.zip`，解压后直接运行 `dist/RunAll.exe`。确保相对路径结构保持不变（`config.json`、`img`、`font`、`data` 与 exe 同层级）。
 
 ## 故障排除
 

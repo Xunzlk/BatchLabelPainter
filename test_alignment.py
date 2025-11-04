@@ -6,6 +6,7 @@ import os
 import json
 from PIL import Image, ImageDraw, ImageFont
 import logging
+import sys
 
 # 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,14 +14,22 @@ logger = logging.getLogger(__name__)
 
 def create_test_image():
     """
-    创建一个测试图片，显示方框边界和文字对齐效果
+    创建测试图片，显示方框边界和文字对齐效果。
 
-    将根据文本是否为 ASCII，动态选择英文字体或非英文字体，
-    以验证不同字体下的居中/对齐在加粗场景下是否仍然稳定。
+    - 根据文本是否为 ASCII，动态选择英文字体或非英文字体；
+    - 使用 Pillow 的 anchor 定位以验证加粗（描边）情况下的居中稳定性；
+    - 自动创建输出目录（修复打包版 EXE 在 output 目录不存在时的保存失败问题）。
+
+    Returns:
+        None
     """
     # 加载配置
     with open('config.json', 'r', encoding='utf-8') as f:
         config = json.load(f)
+
+    # 解析输出目录并确保存在（关键修复）
+    output_dir = config.get('output_dir', 'output')
+    os.makedirs(output_dir, exist_ok=True)
     
     # 打开背景图片
     background = Image.open(config['background_image']).convert('RGBA')
@@ -91,7 +100,7 @@ def create_test_image():
         width=2
     )
     
-    # 测试不同长度的文字
+    # 测试不同长度/不同语言的文字
     test_texts = ["short", "medium length", "very long text and more", "ももちゃん", "悟空"]
     
     for i, test_text in enumerate(test_texts):
@@ -156,7 +165,8 @@ def create_test_image():
         )
         
         # 保存测试图片
-        output_path = f"output/test_alignment_{i+1}_{test_text[:5]}.png"
+        # 使用配置中的 output_dir，避免因 output 目录不存在导致保存失败
+        output_path = os.path.join(output_dir, f"test_alignment_{i+1}_{test_text[:5]}.png")
         test_img.save(output_path, 'PNG')
         logger.info(f"生成测试图片: {output_path}")
         logger.info(f"文字: '{test_text}', ASCII: {is_ascii}, 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}, 字体: {selected_font_path}, stroke_width: {stroke_width}")
@@ -164,6 +174,18 @@ def create_test_image():
 def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size, stroke_width=0):
     """
     计算合适的字体大小（与主程序相同的逻辑），支持描边宽度以模拟加粗效果
+
+    Args:
+        text (str): 测试文字
+        font_path (str): 字体文件路径
+        max_width (int): 方框可用最大宽度
+        max_height (int): 方框可用最大高度
+        max_font_size (int): 允许的最大字体尺寸
+        min_font_size (int): 允许的最小字体尺寸
+        stroke_width (int): 文字描边宽度（影响文字实际尺寸）
+
+    Returns:
+        int: 计算得到的合适字体大小
     """
     font_size = max_font_size
     
@@ -199,7 +221,33 @@ def calculate_font_size(text, font_path, max_width, max_height, max_font_size, m
     
     return min_font_size
 
+
+def wait_for_exit_prompt():
+    """
+    在控制台程序结束后等待按键以避免窗口瞬间关闭。
+
+    - 支持通过环境变量 NO_PAUSE_ON_END=1 跳过等待，便于自动化或脚本调用；
+    - Windows 平台优先使用 msvcrt.getch()，其他平台使用 input()。
+
+    Returns:
+        None
+    """
+    try:
+        if os.environ.get('NO_PAUSE_ON_END') == '1':
+            return
+        print("\n按任意键退出... (设置 NO_PAUSE_ON_END=1 可跳过)")
+        if os.name == 'nt':
+            import msvcrt
+            msvcrt.getch()
+        else:
+            input()
+    except Exception:
+        # 任意异常情况下直接忽略等待，避免阻断
+        pass
+
 if __name__ == "__main__":
     logger.info("开始生成测试图片...")
     create_test_image()
     logger.info("测试图片生成完成！")
+    # 增加退出等待，避免双击运行时窗口秒关，看不到日志
+    wait_for_exit_prompt()
