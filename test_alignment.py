@@ -44,16 +44,20 @@ def create_test_image():
         """
         根据是否 ASCII 返回合并后的字体设置（全局 + 针对英文/非英文的覆盖）。
         - 当 bold=True 且 stroke_width 缺省或为 0 时，默认 stroke_width=1。
+        - 当 bold=False 时，无论配置如何，强制 stroke_width=0。
         - 未设置 stroke_color 时，默认与 color 相同。
         """
         selected = dict(font_settings_global)
         overrides = config.get('font_settings_latin') if is_ascii else config.get('font_settings_non_latin')
         if overrides:
             selected.update(overrides)
-        sw = int(selected.get('stroke_width', 0) or 0)
-        if selected.get('bold', False) and sw == 0:
-            sw = 1
-        selected['stroke_width'] = sw
+        if not selected.get('bold', False):
+            selected['stroke_width'] = 0
+        else:
+            sw = int(selected.get('stroke_width', 0) or 0)
+            if sw == 0:
+                sw = 1
+            selected['stroke_width'] = sw
         if 'stroke_color' not in selected or selected.get('stroke_color') is None:
             selected['stroke_color'] = selected.get('color')
         return selected

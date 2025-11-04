@@ -56,14 +56,20 @@ class IDFillGenerator:
     def read_excel_data(self):
         """
         从Excel文件读取用户ID数据
+
+        说明：
+        - pandas.read_excel 默认将第一行作为列标题（header=0），因此 DataFrame 的第 0 行对应 Excel 的第二行（第一条数据）。
+        - 这里不再跳过第 0 行，确保不会把第一条有效数据误删。
+        - 对空值、纯空白做清理；统一为字符串并去除首尾空格。
         
         Returns:
-            list: 用户ID列表
+            list: 用户ID列表（字符串）
         """
         try:
-            df = pd.read_excel(self.excel_path)
-            # 假设ID在第一列，跳过标题行
-            ids = df.iloc[1:, 0].dropna().tolist()
+            df = pd.read_excel(self.excel_path)  # 默认 header=0（首行作为列名）
+            # 取第一列的所有数据（不跳过第 0 行）并清洗
+            series = df.iloc[:, 0].dropna().astype(str).map(lambda s: s.strip())
+            ids = [s for s in series if s and s.lower() != 'nan']
             logger.info(f"成功读取 {len(ids)} 个用户ID")
             return ids
         except Exception as e:
@@ -154,6 +160,7 @@ class IDFillGenerator:
         - 非英文文本（包含非 ASCII）时，使用 font_settings_non_latin 覆盖基础设置。
         - 若覆盖项未配置，则使用基础设置。
         - 当 bold=True 且未显式设置 stroke_width 或为 0 时，默认将 stroke_width 设为 1。
+        - 当 bold=False 时，无论配置如何，都强制禁用描边（stroke_width=0）。
         - 若未显式设置 stroke_color，则默认与 color 相同。
 
         Args:
@@ -168,11 +175,16 @@ class IDFillGenerator:
         if overrides:
             base.update(overrides)
 
-        # 处理加粗默认描边
-        sw = int(base.get('stroke_width', 0) or 0)
-        if base.get('bold', False) and sw == 0:
-            sw = 1
-        base['stroke_width'] = sw
+        # 处理加粗/描边：
+        # - bold=False 时强制不描边
+        # - bold=True 且 stroke_width 缺省或为 0 时，默认 stroke_width=1
+        if not base.get('bold', False):
+            base['stroke_width'] = 0
+        else:
+            sw = int(base.get('stroke_width', 0) or 0)
+            if sw == 0:
+                sw = 1
+            base['stroke_width'] = sw
 
         # 默认描边颜色与文字颜色一致
         if 'stroke_color' not in base or base.get('stroke_color') is None:

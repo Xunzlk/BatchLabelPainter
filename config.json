@@ -19,7 +19,7 @@
         ],
         "max_font_size": 400,
         "min_font_size": 12,
-        "bold": true,
+        "bold": false,
         "stroke_width": 2,
         "stroke_color": [
             197,
@@ -37,7 +37,7 @@
         ]
     },
     "font_settings_non_latin": {
-        "bold": true,
+        "bold": false,
         "stroke_width": 3,
         "stroke_color": [
             100,

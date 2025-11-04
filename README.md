@@ -152,6 +152,7 @@ python test_alignment.py
 - 合并规则：
   - 以全局 `font_settings` 为基础；按文本类型选择对应的 `font_settings_latin` 或 `font_settings_non_latin` 覆盖基础设置
   - 当 `bold` 为 `true` 且未显式设置 `stroke_width` 或其为 0 时，程序默认 `stroke_width = 1`
+  - 当 bold=False 时，无论配置如何，都强制禁用描边（stroke_width=0）。
   - 若未设置 `stroke_color`，则默认与 `color` 相同
 - 示例（仅示意）：
 ```json
