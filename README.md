@@ -38,6 +38,30 @@ pip install -r requirements.txt
 
 ## 使用步骤
 
+### 0. 一键运行（推荐）
+
+如果你使用打包好的可执行文件（dist 目录），无需安装 Python 环境，直接：
+- 双击 `dist/RunAll.exe`
+- 若 `config.json` 中未设置有效的 `text_box`，程序会自动启动 `FindTextBox.exe` 引导你框选并保存；随后自动继续生成图片。
+- 生成结果在 `dist/output` 目录，文件名为 `001_用户名.png` 格式。
+
+运行行为说明（打包版）：
+- RunAll.exe 为无控制台程序，会自动调用 BatchIdFill.exe。
+- BatchIdFill.exe 为控制台版，会实时显示详细日志；生成完成后控制台会提示“按任意键退出”，以便用户查看运行情况。
+- 如需自动化或不希望等待，可在启动前设置环境变量跳过等待：
+
+PowerShell 示例：
+```powershell
+$env:NO_PAUSE_ON_END=1; .\BatchIdFill.exe; Remove-Item Env:NO_PAUSE_ON_END
+```
+
+CMD 示例：
+```cmd
+set NO_PAUSE_ON_END=1 && BatchIdFill.exe
+```
+
+若你从源码运行（非打包），可继续使用下方步骤 1~5。
+
 ### 1. 确定方框位置（首次使用）
 
 运行方框位置确定工具：
@@ -197,6 +221,9 @@ python test_alignment.py
 3. Excel文件应该使用UTF-8编码以正确显示中文
 4. 生成的图片会保存为PNG格式
 5. 如果用户ID包含特殊字符，文件名会自动转换为安全字符
+6. 如果使用打包的 exe，请整体拷贝 `dist` 文件夹（包含 `config.json`、`img`、`font`、`data` 等资源）到目标机器，在该文件夹内运行 `RunAll.exe` 或 `BatchIdFill.exe`。
+7. BatchIdFill.exe 为控制台版，运行结束会提示“按任意键退出”；如需自动化或脚本运行，可设置环境变量 `NO_PAUSE_ON_END=1` 以跳过等待。
+8. 分发便捷方式：使用项目根目录的 `BatchIdFill_dist.zip`，解压后直接运行 `dist/RunAll.exe`。确保相对路径结构保持不变（`config.json`、`img`、`font`、`data` 与 exe 同层级）。
 
 ## 故障排除
 

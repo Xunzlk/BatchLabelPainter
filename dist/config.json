@@ -1,0 +1,50 @@
+{
+    "background_image": "img/background.png",
+    "font_path": "font/BitTrip7(sRB).TTF",
+    "font_path_latin": "font/BitTrip7(sRB).TTF",
+    "font_path_non_latin": "font/ChillBitmap_16px.ttf",
+    "excel_file": "data/UserIds.xlsx",
+    "output_dir": "output",
+    "text_box": {
+        "x": 636,
+        "y": 859,
+        "width": 1052,
+        "height": 170
+    },
+    "font_settings": {
+        "color": [
+            197,
+            253,
+            82
+        ],
+        "max_font_size": 400,
+        "min_font_size": 12,
+        "bold": false,
+        "stroke_width": 2,
+        "stroke_color": [
+            197,
+            253,
+            82
+        ]
+    },
+    "font_settings_latin": {
+        "bold": false,
+        "stroke_width": 0,
+        "stroke_color": [
+            197,
+            253,
+            82
+        ]
+    },
+    "font_settings_non_latin": {
+        "bold": true,
+        "stroke_width": 3,
+        "stroke_color": [
+            197,
+            253,
+            82
+        ]
+    },
+    "text_alignment": "center",
+    "padding": 0
+}

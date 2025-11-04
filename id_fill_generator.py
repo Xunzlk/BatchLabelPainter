@@ -9,6 +9,7 @@ import json
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 import logging
+import sys
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -374,6 +375,39 @@ def main():
         logger.error(f"程序执行失败: {e}")
         print(f"错误: {e}")
         print("请检查配置文件和输入文件是否正确")
+    finally:
+        wait_for_exit_prompt()
+
+
+def wait_for_exit_prompt():
+    """
+    等待用户按任意键后退出（控制台保留）。
+
+    设计意图：
+    - 便于双击运行或由总控入口（RunAll.exe）启动时，用户查看完整日志与生成结果。
+    - 在 Windows 平台优先使用 msvcrt.getch() 等待“任意键”；其他平台回退到 input()（需按 Enter）。
+    - 支持通过环境变量 NO_PAUSE_ON_END=1 跳过等待，以便自动化或脚本环境运行。
+
+    返回：无
+    """
+    try:
+        # 可通过环境变量跳过等待（例如：在 CI 或自动化测试中）
+        if os.environ.get("NO_PAUSE_ON_END") == "1":
+            return
+
+        # 仅在交互式终端中才进行等待，避免非交互环境阻塞
+        if sys.stdin is not None and sys.stdin.isatty():
+            print("\n按任意键退出...", flush=True)
+            try:
+                # Windows 平台：等待任意键
+                import msvcrt  # 函数级导入，避免非 Windows 环境导入失败
+                msvcrt.getch()
+            except Exception:
+                # 其他平台或特殊环境：回退到按 Enter 键
+                input("按 Enter 键退出...")
+    except Exception:
+        # 保底保护：即使出现异常，也不影响程序正常结束
+        pass
 
 
 if __name__ == "__main__":
