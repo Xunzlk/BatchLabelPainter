@@ -135,6 +135,16 @@ python test_alignment.py
 - `stroke_width`: 描边宽度（像素）。当与 `color` 相同可模拟加粗；注意描边会增加文字的实际宽高，程序已在尺寸计算中考虑该影响
 - `stroke_color`: 描边颜色（RGB）。如果未设置此项，程序会使用与 `color` 相同的颜色作为描边颜色；如需“彩色描边 + 不同填充色”效果，配置此项即可。
 
+### 按语言选择字体
+- 当需要区分英文与其他语言的字体时，可在 `config.json` 中额外配置：
+  - `font_path_latin`: 英文字体路径（仅 ASCII 文本使用），例如 `font/BitTrip7(sRB).TTF`
+  - `font_path_non_latin`: 非英文字体路径（包含中文/日文/韩文等非 ASCII 文本使用），例如 `font/ChillBitmap_16px.ttf`
+- 程序会自动检测文本是否为 ASCII：
+  - 仅 ASCII（英文、数字、常见符号、空格等）→ 使用 `font_path_latin`
+  - 含非 ASCII（中文、日文、韩文等）→ 使用 `font_path_non_latin`
+- 若未设置这两项，会回退使用 `font_path`
+- 混合文本（既有英文又有非 ASCII）会使用 `font_path_non_latin`，以保证所有字符都能渲染；如需“每个字符按语言分别选择字体”的高级排版，我可以为你实现按字符切分并逐段布局的版本。
+
 ### 对齐方式
 - `center`: 居中对齐
 - `left`: 左对齐

@@ -124,6 +124,45 @@ class IDFillGenerator:
         
         logger.warning(f"使用最小字体大小 {min_font_size} 对于文字: {text}")
         return min_font_size
+
+    def choose_font_path(self, text):
+        """
+        根据文本内容选择字体路径。
+
+        规则：
+        - 若文本全部为 ASCII 字符（英文、数字、常见符号、空格等），使用配置中的 font_path_latin
+        - 否则（包含非 ASCII 字符，例如中文、日文、韩文等），使用配置中的 font_path_non_latin
+        - 若未配置上述两项，则回退使用 font_path
+
+        Args:
+            text (str): 需要绘制的文本
+
+        Returns:
+            str: 选择后的字体文件路径
+        """
+        try:
+            # 优先使用专用配置项
+            font_path_latin = self.config.get('font_path_latin')
+            font_path_non_latin = self.config.get('font_path_non_latin')
+
+            # Python 3.7+ 提供 str.isascii() 判断是否仅包含 ASCII
+            is_ascii = False
+            try:
+                is_ascii = str(text).isascii()
+            except Exception:
+                # 兼容性回退：检查每个字符码点是否 < 128
+                is_ascii = all(ord(ch) < 128 for ch in str(text))
+
+            if is_ascii and font_path_latin:
+                return font_path_latin
+            if (not is_ascii) and font_path_non_latin:
+                return font_path_non_latin
+
+            # 回退到默认字体路径
+            return self.font_path
+        except Exception as e:
+            logger.warning(f"字体选择失败，回退默认字体: {e}")
+            return self.font_path
     
     def create_id_image(self, user_id, output_filename):
         """
@@ -154,10 +193,13 @@ class IDFillGenerator:
             if font_settings.get('bold', False) and stroke_width == 0:
                 stroke_width = 1  # 启用加粗时，默认使用 1px 描边
 
+            # 根据文本内容选择字体路径（英文/非英文）
+            selected_font_path = self.choose_font_path(str(user_id))
+
             # 计算合适的字体大小
             font_size = self.calculate_font_size(
                 str(user_id),
-                self.font_path,
+                selected_font_path,
                 available_width,
                 available_height,
                 font_settings['max_font_size'],
@@ -166,7 +208,7 @@ class IDFillGenerator:
             )
             
             # 创建字体对象
-            font = ImageFont.truetype(self.font_path, font_size)
+            font = ImageFont.truetype(selected_font_path, font_size)
             
             # 使用更准确的方法获取文字尺寸和位置
             # 创建临时绘图对象来测量文字

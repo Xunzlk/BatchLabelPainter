@@ -14,6 +14,9 @@ logger = logging.getLogger(__name__)
 def create_test_image():
     """
     创建一个测试图片，显示方框边界和文字对齐效果
+
+    将根据文本是否为 ASCII，动态选择英文字体或非英文字体，
+    以验证不同字体下的居中/对齐在加粗场景下是否仍然稳定。
     """
     # 加载配置
     with open('config.json', 'r', encoding='utf-8') as f:
@@ -57,7 +60,7 @@ def create_test_image():
     )
     
     # 测试不同长度的文字
-    test_texts = ["short", "medium length", "very long text and more"]
+    test_texts = ["short", "medium length", "very long text and more", "ももちゃん", "悟空"]
     
     for i, test_text in enumerate(test_texts):
         # 为每个测试文字创建单独的图片
@@ -70,9 +73,17 @@ def create_test_image():
         if font_settings.get('bold', False) and stroke_width == 0:
             stroke_width = 1
 
+        # 根据文本内容选择字体路径（英文/非英文）
+        selected_font_path = None
+        try:
+            is_ascii = test_text.isascii() if hasattr(str, 'isascii') else all(ord(ch) < 128 for ch in test_text)
+            selected_font_path = config.get('font_path_latin') if is_ascii else config.get('font_path_non_latin', config['font_path'])
+        except Exception:
+            selected_font_path = config['font_path']
+
         font_size = calculate_font_size(
             test_text,
-            config['font_path'],
+            selected_font_path,
             box_width - 2 * config['padding'],
             box_height - 2 * config['padding'],
             font_settings['max_font_size'],
@@ -81,7 +92,7 @@ def create_test_image():
         )
         
         # 创建字体
-        font = ImageFont.truetype(config['font_path'], font_size)
+        font = ImageFont.truetype(selected_font_path or config['font_path'], font_size)
         
         # 计算文字位置
         temp_img = Image.new('RGB', (box_width, box_height), 'white')
@@ -117,7 +128,7 @@ def create_test_image():
         output_path = f"output/test_alignment_{i+1}_{test_text[:5]}.png"
         test_img.save(output_path, 'PNG')
         logger.info(f"生成测试图片: {output_path}")
-        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}")
+        logger.info(f"文字: '{test_text}', 字体大小: {font_size}, 位置: ({text_x}, {text_y}), anchor: {anchor}, 字体: {selected_font_path}")
 
 def calculate_font_size(text, font_path, max_width, max_height, max_font_size, min_font_size, stroke_width=0):
     """

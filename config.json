@@ -1,6 +1,8 @@
 {
     "background_image": "img/background.png",
     "font_path": "font/ChillBitmap_16px.ttf",
+    "font_path_latin": "d:\\WorkSpace\\OtherDev\\BatchIdFill\\font\\BitTrip7(sRB).TTF",
+    "font_path_non_latin": "d:\\WorkSpace\\OtherDev\\BatchIdFill\\font\\ChillBitmap_16px.ttf",
     "excel_file": "data/UserIds.xlsx",
     "output_dir": "output",
     "text_box": {
