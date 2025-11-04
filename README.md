@@ -131,8 +131,8 @@ python test_alignment.py
 - `color`: RGB颜色值，例如 [0, 0, 0] 表示黑色，[255, 0, 0] 表示红色
 - `max_font_size`: 最大字体大小，程序会从这个大小开始尝试
 - `min_font_size`: 最小字体大小，如果文字太长会缩小到这个大小
-- `bold`: 是否加粗（布尔值）。开启后会自动将 `stroke_width` 设为 1（若你未显式配置），并在绘制时使用与 `color` 相同的描边颜色来模拟加粗
-- `stroke_width`: 描边宽度（像素）。当与 `color` 相同可模拟加粗；注意描边会增加文字的实际宽高，程序已在尺寸计算中考虑该影响
+- `bold`: 是否加粗（布尔值）。开启后会自动将 `stroke_width` 设为 1（若你未显式配置），并在绘制时使用与 `color` 相同的描边颜色来模拟加粗；当 `bold=false` 时，程序会强制将 `stroke_width` 设为 0（完全不描边）
+- `stroke_width`: 描边宽度（像素）。当与 `color` 相同可模拟加粗；注意描边会增加文字的实际宽高，程序已在尺寸计算中考虑该影响；若 `bold=false`，此项将被忽略并置为 0
 - `stroke_color`: 描边颜色（RGB）。如果未设置此项，程序会使用与 `color` 相同的颜色作为描边颜色；如需“彩色描边 + 不同填充色”效果，配置此项即可。
 
 ### 按语言选择字体
@@ -180,6 +180,15 @@ python test_alignment.py
 - `center`: 居中对齐
 - `left`: 左对齐
 - `right`: 右对齐
+
+### 输出文件命名规则
+- 文件名格式：`<三位编号>_<安全化ID>.png`
+  - 示例：
+    - `output/001_Xlmy.png`
+    - `output/002_Luks.png`
+    - `output/003_alice_devil.png`
+- 编号从 001 开始，按 Excel 中的出现顺序递增，便于在文件管理器中按名称排序。
+- “安全化ID”会将不适合文件名的字符转换或替换，确保跨平台可用；原始中文/日文文字仍会正确渲染到图片中（不影响图片内容显示）。
 
 ## 注意事项
 
@@ -230,11 +239,11 @@ python test_alignment.py
 - ももちゃん
 
 程序会生成对应的图片文件：
-- Amorta_001.png
-- Luks_002.png
-- aliks_devil_003.png
-- no___one_004.png
-- showmaker_005.png
-- ももちゃん_006.png
+- 001_Amorta.png
+- 002_Luks.png
+- 003_aliks_devil.png
+- 004_no___one.png
+- 005_showmaker.png
+- 006_ももちゃん.png
 
 每张图片都包含背景图和对应的用户ID文字。

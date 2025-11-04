@@ -37,10 +37,10 @@
         ]
     },
     "font_settings_non_latin": {
-        "bold": false,
+        "bold": true,
         "stroke_width": 3,
         "stroke_color": [
-            100,
+            197,
             253,
             82
         ]

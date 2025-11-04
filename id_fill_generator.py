@@ -341,7 +341,8 @@ class IDFillGenerator:
             for i, user_id in enumerate(user_ids, 1):
                 # 清理文件名中的特殊字符
                 safe_filename = str(user_id).replace(' ', '_').replace('/', '_').replace('\\', '_')
-                output_filename = f"{safe_filename}_{i:03d}.png"
+                # 为方便排序，将数字编号放在前面，例如：001_Xlmy.png
+                output_filename = f"{i:03d}_{safe_filename}.png"
                 
                 self.create_id_image(user_id, output_filename)
                 
